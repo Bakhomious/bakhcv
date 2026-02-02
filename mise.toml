@@ -1,0 +1,42 @@
+[tools]
+tinytex = "latest"
+
+[env]
+NAME = "cv"
+OUT_DIR = "out"
+
+[tasks.setup]
+description = "Install latexmk and common packages (Run this once)"
+run = "tlmgr install latexmk supertabular"
+
+[tasks.build]
+description = "Auto-detect main .tex file and build PDF"
+depends = ["setup"]
+run = """
+mkdir -p ${OUT_DIR}
+latexmk -pdf -outdir=${OUT_DIR}
+"""
+
+[tasks.watch]
+description = "Watch for changes and continuously rebuild"
+depends = ["setup"]
+run = """
+mkdir -p ${OUT_DIR}
+latexmk -pvc -pdf -outdir=${OUT_DIR} -interaction=nonstopmode $(grep -l '\\documentclass' *.tex | head -n 1)
+"""
+
+[tasks.clean]
+description = "Remove intermediate files"
+run = "latexmk -c -outdir=${OUT_DIR}"
+
+[tasks.distclean]
+description = "Remove the output directory completely"
+run = "rm -rf ${OUT_DIR}"
+
+[tasks.install-hooks]
+description = "Install git pre-commit hook"
+run = """
+echo '#!/bin/sh\nlatexmk -c && rm -f ${NAME}.pdf ${NAME}.bbl ${NAME}.synctex.gz' > .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+echo "Pre-commit hook installed."
+"""
